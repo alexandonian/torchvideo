@@ -1,0 +1,47 @@
+{% set name = "torchvideo" %}
+{% set build_number = "0" %}
+
+{% set version = "0.0.0" %}
+{% set sha256 = "0ef52abe5ad6eefb54fe74afd2d768d4e6d3eca238e4bd74d6d41ec883d5538f" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  fn: {{ name }}-{{ version }}.tar.gz
+  url: https://github.com/willprice/{{ name }}/archive/{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  number: {{ build_number }}
+  skip: True  # [win or py2k]
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+    - av
+    - lintel
+    - numpy
+    - torch
+    - torchvision
+    - gulpio
+    - moviepy
+    - pillow
+
+test:
+  imports:
+    - torchvideo
+
+about:
+  home: https://github.com/willprice/
+  license: Mozilla Public License 2.0
+  license_file: LICENSE
+  summary: 'A PyTorch video dataset library'
+
+extra:
+  recipe-maintainers:
+    - willprice
