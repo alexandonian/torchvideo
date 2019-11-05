@@ -44,15 +44,23 @@ class VideoRecordDataset(VideoDataset):
             root_path, label_set=None, sampler=sampler, transform=transform
         )
 
+        self.video_lengths = {}
         self.records = record_set
+        if frame_counter is None:
+            frame_counter = _get_videofile_frame_count
+        self.frame_counter = frame_counter
 
     def __getitem__(
         self, index: int
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
         video_rec = self.records[index]
         video_path = os.path.join(self.root_path, video_rec.path)
-        # frames_idx = self.sampler.sample(video_rec.num_frames)
-        frames_idx = self.sampler.sample(_get_videofile_frame_count(video_path))
+        try:
+            video_length = self.video_lengths[index]
+        except KeyError:
+            self.video_lengths[index] = self.frame_counter(video_path)
+            video_length = self.video_lengths[index]
+        frames_idx = self.sampler.sample(video_length)
         # print(f'num_frames: {video_rec.num_frames}')
         # print(f'measured_num_frames: {_get_videofile_frame_count(video_path)}')
         # print(f'frames_idx: {frames_idx}')
@@ -186,3 +194,10 @@ class VideoFolderDataset(VideoDataset):
 
         return default_loader(video_file, frame_idx)
 
+
+class StaticFrameCounter:
+    def __init__(self, num_frames):
+        self.num_frames = num_frames
+
+    def __call__(self, input):
+        return self.num_frames
