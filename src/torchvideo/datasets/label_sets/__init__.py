@@ -3,3 +3,4 @@ from .dummy_label_set import DummyLabelSet
 from .gulp_label_set import GulpLabelSet
 from .label_set import LabelSet
 from .lambda_label_set import LambdaLabelSet
+from .record_set import RecordSet
