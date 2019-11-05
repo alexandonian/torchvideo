@@ -131,7 +131,7 @@ class TemporalSegmentSampler(FrameSampler):
 
     """
 
-    def __init__(self, segment_count: int, snippet_length: int, test: bool = False):
+    def __init__(self, segment_count: int, snippet_length: int = 1, test: bool = False):
         """
         Args:
             segment_count: Number of segments to split the video into, from which a
