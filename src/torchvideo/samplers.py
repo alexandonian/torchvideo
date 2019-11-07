@@ -43,7 +43,6 @@ class FullVideoSampler(FrameSampler):
 
         Returns:
 
-a
             ``slice`` from ``0`` to ``video_length`` with step size ``frame_step``
         """
         if video_length <= 0:
@@ -131,7 +130,7 @@ class TemporalSegmentSampler(FrameSampler):
 
     """
 
-    def __init__(self, segment_count: int, snippet_length: int = 1, test: bool = False):
+    def __init__(self, segment_count: int, snippet_length: int = 1, test: bool = True):
         """
         Args:
             segment_count: Number of segments to split the video into, from which a
@@ -331,3 +330,6 @@ def _oversample(video_length: int, sample_length: int) -> List[int]:
 
 
 _default_sampler = FullVideoSampler
+
+# Convenient Alias
+TSNSampler = TemporalSegmentSampler
