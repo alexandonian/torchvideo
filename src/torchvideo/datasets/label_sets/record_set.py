@@ -37,7 +37,7 @@ class MultiLabelRecordSet:
         with open(filename) as f:
             for line in f:
                 path, *categories = line.strip().split(sep)
-                self.records.append(MultiLabelVideoRecord(path, [int(self.cat2label(cat)) for cat in categories]))
+                self.records.append(MultiLabelVideoRecord(path, [int(self.cat2label[cat]) for cat in categories]))
 
     def __getitem__(self, idx: int) -> MultiLabelVideoRecord:
         return self.records[idx]
