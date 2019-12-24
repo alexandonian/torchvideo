@@ -130,7 +130,7 @@ class TemporalSegmentSampler(FrameSampler):
 
     """
 
-    def __init__(self, segment_count: int, snippet_length: int = 1, test: bool = True):
+    def __init__(self, segment_count: int = 16, snippet_length: int = 1, test: bool = True):
         """
         Args:
             segment_count: Number of segments to split the video into, from which a
@@ -235,6 +235,20 @@ class TemporalSegmentSampler(FrameSampler):
         return slice(int(start), int(start + self.snippet_length), 1)
 
 
+class TemporalSegmentFrameSampler(TemporalSegmentSampler):
+
+    def sample(self, video_length: int) -> Union[List[slice], List[int]]:
+        """
+
+        Args:
+            video_length: The duration in frames of the video to be sampled from
+
+        Returns:
+            Frame indices as a flat list.
+        """
+        return frame_idx_to_list(super().sample(video_length))
+
+
 class LambdaSampler(FrameSampler):
     """Custom sampler constructed from a user provided function."""
 
@@ -333,3 +347,5 @@ _default_sampler = FullVideoSampler
 
 # Convenient Alias
 TSNSampler = TemporalSegmentSampler
+TSNFrameSampler = TemporalSegmentFrameSampler
+
