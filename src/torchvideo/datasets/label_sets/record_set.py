@@ -8,10 +8,10 @@ FrameFolderRecord = namedtuple('FrameFolderRecord', ['path', 'num_frames', 'labe
 
 class RecordSet:
 
-    def __init__(self, filename, sep: Optional[str] = ' '):
+    def __init__(self, metafile, sep: Optional[str] = ' '):
         self.records = []
-        self.filename = filename
-        with open(filename) as f:
+        self.metafile = metafile
+        with open(metafile) as f:
             for line in f:
                 path, label = line.strip().split(sep)
                 self.records.append(VideoRecord(path, int(label)))
@@ -22,19 +22,20 @@ class RecordSet:
     def __len__(self):
         return len(self.records)
 
+
 class MultiLabelRecordSet:
 
-    def __init__(self, filename,
+    def __init__(self, metafile,
                  category_filename,
-        sep: Optional[str] = ','):
+                 sep: Optional[str] = ','):
         self.records = []
-        self.filename = filename
+        self.metafile = metafile
         self.category_filename = category_filename
 
         with open(category_filename) as f:
             self.cat2label = {k: int(v) for k, v in dict(line.strip().split(',') for line in f).items()}
 
-        with open(filename) as f:
+        with open(metafile) as f:
             for line in f:
                 path, *categories = line.strip().split(sep)
                 self.records.append(MultiLabelVideoRecord(path, [int(self.cat2label[cat]) for cat in categories]))
@@ -45,16 +46,16 @@ class MultiLabelRecordSet:
     def __len__(self):
         return len(self.records)
 
+
 class FrameRecordSet(RecordSet):
 
-    def __init__(self, filename, sep: Optional[str] = ' '):
+    def __init__(self, metafile, sep: Optional[str] = ' '):
         self.records = []
-        self.filename = filename
-        with open(filename) as f:
+        self.metafile = metafile
+        with open(metafile) as f:
             for line in f:
                 path, num_frames, label = line.strip().split(sep)
                 self.records.append(FrameFolderRecord(path + '.mp4', int(num_frames), int(label)))
 
     def __getitem__(self, idx: int) -> FrameFolderRecord:
         return self.records[idx]
-

@@ -1,5 +1,7 @@
 from pathlib import Path
-from typing import Union, Optional, Tuple, List, Any  # noqa
+from typing import Union, Optional, Tuple, List, Any, Callable, Iterator  # noqa
+
+from PIL.Image import Image
 
 import torch.utils.data
 
@@ -15,7 +17,7 @@ class VideoDataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        root_path: Union[str, Path],
+        root: Union[str, Path],
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
         transform: Optional[Transform] = None,
@@ -23,12 +25,12 @@ class VideoDataset(torch.utils.data.Dataset):
         """
 
         Args:
-            root_path: Path to dataset on disk.
+            root: Path to dataset on disk.
             label_set: Optional label set for labelling examples.
             sampler: Optional sampler for drawing frames from each video.
             transform: Optional transform over the list of frames.
         """
-        self.root_path = Path(root_path)
+        self.root = Path(root)
         self.label_set = label_set
         self.sampler = sampler
         self.transform = transform
@@ -61,3 +63,12 @@ class VideoDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:  # pragma: no cover
         """Total number of examples in the dataset"""
         raise NotImplementedError()
+
+    @staticmethod
+    def _load_frames(
+        video_file: Path,
+        frame_idx: Union[slice, List[slice], List[int]],
+    ) -> Iterator[Image]:
+        from torchvideo.internal.readers import default_loader
+
+        return default_loader(video_file, frame_idx)

@@ -10,81 +10,66 @@ from torchvideo.samplers import FrameSampler, _default_sampler
 from torchvideo.transforms import PILVideoToTensor
 
 from .helpers import invoke_transform
-from .label_sets import LabelSet
+from .label_sets import LabelSet, RecordSet
 from .types import Label, PILVideoTransform, empty_label
 from .video_dataset import VideoDataset
 
 
 class VideoRecordDataset(VideoDataset):
-    """Dataset captured as a list of paths pointing to video files stored on a filesystem.
-
-    The folder hierarchy could look something like this: ::
-
-        root/category1/video1.mp4
-        root/category1/video2.mp4
-        root/category2/video3.mp4
-        root/category2/video4.mp4
-
-        ...
-    """
 
     def __init__(
         self,
-        root_path: Union[str, Path],
-        record_set: list,
-        filter: Optional[Callable[[Path], bool]] = None,
+        root: Union[str, Path],
+        record_set: RecordSet,
         sampler: FrameSampler = _default_sampler(),
-        transform: Optional[PILVideoTransform] = None,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
         frame_counter: Optional[Callable[[Path], int]] = None,
     ) -> None:
 
-        if transform is None:
-            transform = PILVideoToTensor()
-        super().__init__(
-            root_path, label_set=None, sampler=sampler, transform=transform
-        )
+        self.root = root
+        self.sampler = sampler
+        self.record_set = record_set
 
-        self.video_lengths = {}
-        self.records = record_set
         if frame_counter is None:
             frame_counter = _get_videofile_frame_count
         self.frame_counter = frame_counter
 
-    def __getitem__(
-        self, index: int
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
-        video_rec = self.records[index]
-        video_path = os.path.join(self.root_path, video_rec.path)
+        if transform is None:
+            transform = PILVideoToTensor()
+        self.transform = transform
+
+        if target_transform is None:
+            target_transform = int
+        self.target_transform = target_transform
+        self.video_lens = {}
+
+    def __getitem__(self, index: int) -> Union[torch.Tensor, Tuple[torch.Tensor, int]]:
+        record = self.record_set[index]
+        video_path = os.path.join(self.root, record.path)
         try:
-            video_length = self.video_lengths[index]
+            video_length = self.video_lens[index]
         except KeyError:
-            self.video_lengths[index] = self.frame_counter(video_path)
-            video_length = self.video_lengths[index]
-        frames_idx = self.sampler.sample(video_length)
-        # print(f'num_frames: {video_rec.num_frames}')
-        # print(f'measured_num_frames: {_get_videofile_frame_count(video_path)}')
-        # print(f'frames_idx: {frames_idx}')
-        frames = self._load_frames(frames_idx, video_path)
+            self.video_lens[index] = self.frame_counter(video_path)
+            video_length = self.video_lens[index]
+        frame_inds = self.sampler.sample(video_length)
+        frames = self._load_frames(video_path, frame_inds)
+        label = record.label
 
-        if self.labels is not None:
-            label = self.labels[index]
-        else:
-            label = empty_label
+        if self.transform is not None:
+            frames = self.transform(frames)
+        if self.target_transform is not None:
+            label = self.target_transform(label)
 
-        frames, label = invoke_transform(self.transform, frames, label)
-
-        return frames, video_rec.label
-        if label is empty_label:
-            return frames
-        print(frames, video_rec.label)
-        return frames, video_rec.label
+        return frames, label
 
     def __len__(self):
-        return len(self.records)
+        return len(self.record_set)
 
     @staticmethod
     def _load_frames(
-        frame_idx: Union[slice, List[slice], List[int]], video_file: Path
+        video_file: Path,
+        frame_idx: Union[slice, List[slice], List[int]],
     ) -> Iterator[Image]:
         from torchvideo.internal.readers import default_loader
 
@@ -147,7 +132,7 @@ class VideoFolderDataset(VideoDataset):
         video_file = self._video_paths[index]
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
-        frames = self._load_frames(frames_idx, video_file)
+        frames = self._load_frames(video_file, frames_idx)
 
         if self.labels is not None:
             label = self.labels[index]
@@ -188,7 +173,8 @@ class VideoFolderDataset(VideoDataset):
 
     @staticmethod
     def _load_frames(
-        frame_idx: Union[slice, List[slice], List[int]], video_file: Path
+        video_file: Path,
+        frame_idx: Union[slice, List[slice], List[int]],
     ) -> Iterator[Image]:
         from torchvideo.internal.readers import default_loader
 
