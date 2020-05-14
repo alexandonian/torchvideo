@@ -85,7 +85,7 @@ class ClipSampler(FrameSampler):
             )
         sample_length = compute_sample_length(self.clip_length, self.frame_step)
         if video_length < sample_length:
-            return _oversample(video_length, sample_length)
+            return _oversample(video_length, sample_length)[::self.frame_step]
 
         max_offset = video_length - sample_length
 
